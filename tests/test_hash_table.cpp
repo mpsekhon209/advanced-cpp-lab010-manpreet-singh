@@ -78,6 +78,29 @@ TEST_CASE("HashTable handles collisions with quadratic probing") {
     REQUIRE(table.get("cab") == 3);
 }
 
+TEST_CASE("HashTable preserves collision chains and reuses tombstones safely") {
+    HashTable table(5);
+    REQUIRE(table.insert("abc", 1));
+    REQUIRE(table.insert("bac", 2));
+    REQUIRE(table.insert("cab", 3));
+
+    REQUIRE(table.remove("abc"));
+    REQUIRE(table.contains("bac"));
+    REQUIRE(table.contains("cab"));
+    REQUIRE_FALSE(table.insert("cab", 99));
+    REQUIRE(table.get("cab") == 3);
+    REQUIRE(table.insert("new-key", 4));
+    REQUIRE(table.size() == 3u);
+}
+
+TEST_CASE("HashTable get throws for a missing or deleted key") {
+    HashTable table(7);
+    REQUIRE_THROWS_AS(table.get("missing"), std::out_of_range);
+    REQUIRE(table.insert("present", 10));
+    REQUIRE(table.remove("present"));
+    REQUIRE_THROWS_AS(table.get("present"), std::out_of_range);
+}
+
 TEST_CASE("HashTable rehashes when load factor grows") {
     HashTable table(5);
     for (int i = 0; i < 5; ++i) {
